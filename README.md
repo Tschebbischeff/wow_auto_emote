@@ -1,0 +1,1 @@
+# wow_auto_emote
