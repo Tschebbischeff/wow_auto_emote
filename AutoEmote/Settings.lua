@@ -21,8 +21,7 @@ local function setSize(element, sizeX, sizeY)
     element:SetScript("OnShow", function(self)
         if sizeX < 0 then sizeX = self:GetParent():GetWidth() * (-sizeX) end
         if sizeY < 0 then sizeY = self:GetParent():GetHeight() * (-sizeY) end
-        element:setWidth(sizeX)
-        element:setHeight(sizeY)
+        self:SetSize(sizeX, sizeY)
     end)
 end
 
@@ -32,7 +31,7 @@ local function addTitle(frame, position, text)
     title:SetText(text)
 
     local line = frame:CreateTexture(nil, "ARTWORK")
-    line:setSize(frame:GetWidth(), 2)
+    setSize(line, -1.0, 2)
     line:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -layoutOpts.margin)
     line:SetColorTexture(1, 1, 1, 0.2) -- Subtle grey line
 
@@ -108,7 +107,9 @@ local function addModuleSettings(frame, nextPosition, moduleName)
 end
 
 function AutoEmote.Settings.initialize()
-    local mainFrame = CreateFrame("Frame", nil, InterfaceOptionsFramePanelContainer)
+    local mainFrame = CreateFrame("Frame")
+    -- setSize(mainFrame, -1.0, -1.0)
+    -- local mainFrame = CreateFrame("Frame", nil, InterfaceOptionsFramePanelContainer)
     -- mainFrame:SetPoint("TOPLEFT", SettingsPanel.Container, "TOPLEFT", 0, 0)
     -- mainFrame:SetPoint("BOTTOMRIGHT", SettingsPanel.Container, "BOTTOMRIGHT", 0, 0)
     -- scrollFrame:SetPoint("TOPLEFT", 3, -4)
