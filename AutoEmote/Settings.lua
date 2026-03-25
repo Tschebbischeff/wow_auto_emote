@@ -3,7 +3,8 @@ AutoEmote.Settings = {}
 
 local layoutOpts = {
     padding = 8,
-    margin = 8
+    margin = 8,
+    scrollBarWidth = 18
 }
 
 local function setTooltip(element, text)
@@ -107,29 +108,29 @@ local function addModuleSettings(frame, nextPosition, moduleName)
 end
 
 function AutoEmote.Settings.initialize()
-    local mainFrame = CreateFrame("Frame")
-    -- setSize(mainFrame, -1.0, -1.0)
-    -- local mainFrame = CreateFrame("Frame", nil, InterfaceOptionsFramePanelContainer)
-    -- mainFrame:SetPoint("TOPLEFT", SettingsPanel.Container, "TOPLEFT", 0, 0)
-    -- mainFrame:SetPoint("BOTTOMRIGHT", SettingsPanel.Container, "BOTTOMRIGHT", 0, 0)
-    -- scrollFrame:SetPoint("TOPLEFT", 3, -4)
-    -- scrollFrame:SetPoint("BOTTOMRIGHT", -27, 4)
+    -- local mainFrame = CreateFrame("Frame")
+    -- mainFrame:SetSize(SettingsPanel.Container:GetWidth() - layoutOpts.padding, SettingsPanel.Container:GetHeight() - layoutOpts.padding)
 
-    -- local scrollChild = CreateFrame("Frame")
-    -- scrollFrame:SetScrollChild(scrollChild)
-    -- scrollChild:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18)
-    -- scrollChild:SetHeight(1)
+    local mainFrame = CreateFrame("ScrollFrame", nil, nil, "UIPanelScrollFrameTemplate")
+    mainFrame:SetSize(SettingsPanel.Container:GetWidth() - layoutOpts.padding, SettingsPanel.Container:GetHeight() - layoutOpts.padding)
+    -- mainFrame:SetPoint("TOPLEFT", mainFrame, "BOTTOMRIGHT", 0, 0)
+    -- mainFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", 0, 0)
 
-    local innerBox = mainFrame:CreateTexture(nil, "ARTWORK")
-    innerBox:SetSize(SettingsPanel.Container:GetWidth() - layoutOpts.padding, SettingsPanel.Container:GetHeight() - layoutOpts.padding)
+    local scrollChild = CreateFrame("Frame")
+    mainFrame:SetScrollChild(scrollChild)
+    scrollChild:SetWidth(SettingsPanel.Container:GetWidth() - layoutOpts.padding - layoutOpts.scrollBarWidth)
+    scrollChild:SetHeight(SettingsPanel.Container:GetHeight() - layoutOpts.padding)
+
+    local innerBox = scrollChild:CreateTexture(nil, "ARTWORK")
+    setSize(innerBox, -1.0, -1.0)
     innerBox:SetPoint("TOPLEFT", 0, 0)
-    innerBox:SetColorTexture(1, 1, 1, 0.1) -- Subtle grey
+    innerBox:SetColorTexture(1, 1, 1, 0.0)
 
     local nextPosition = innerBox
 
-    nextPosition = addHeader(innerBox, nextPosition)
-    nextPosition = addGeneralSettings(innerBox, nextPosition)
-    nextPosition = addModuleSettings(innerBox, nextPosition, "lickAll")
+    nextPosition = addHeader(scrollChild, nextPosition)
+    nextPosition = addGeneralSettings(scrollChild, nextPosition)
+    nextPosition = addModuleSettings(scrollChild, nextPosition, "lickAll")
 
     Settings.RegisterAddOnCategory(Settings.RegisterCanvasLayoutCategory(mainFrame, addonName))
 end
