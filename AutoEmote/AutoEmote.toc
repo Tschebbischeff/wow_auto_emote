@@ -1,0 +1,23 @@
+## Interface: 120001
+## Title: Auto Emote
+## Notes: Automatically executes emotes when targeting creatures.
+## Version: 1.0.0
+## X-Source: https://github.com/Tschebbischeff/wow_auto_emote
+## Category: Other
+## Category-deDE: Anderes
+## Category-esES: Otros
+## Category-esMX: Otros
+## Category-frFR: Autre
+## Category-itIT: Altro
+## Category-koKR: 기타
+## Category-ptBR: Outro
+## Category-ruRU: Другое
+## Category-zhCN: 其它
+## Category-zhTW: 其他
+## SavedVariablesPerCharacter: AutoEmoteSettings
+## SavedVariablesPerCharacter: AutoEmoteDB
+
+AutoEmote.lua [AllowLoadGameType mainline]
+Logging.lua [AllowLoadGameType mainline]
+Settings.lua [AllowLoadGameType mainline]
+Events.lua [AllowLoadGameType mainline]
