@@ -7,6 +7,13 @@ local layoutOpts = {
     scrollBarWidth = 18
 }
 
+local function initializeStats(statsTable)
+    if statsTable.other == nil then statsTable.other = 0 end
+    if statsTable.player == nil then statsTable.player = 0 end
+    if statsTable.pet == nil then statsTable.pet = 0 end
+    if statsTable.minion == nil then statsTable.minion = 0 end
+end
+
 local function setTooltip(element, text)
     element:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -37,6 +44,25 @@ local function addTitle(frame, position, text)
     line:SetColorTexture(1, 1, 1, 0.2) -- Subtle grey line
 
     return line
+end
+
+local function addText(frame, position, text)
+    local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    title:SetPoint("TOPLEFT", position, "BOTTOMLEFT", 0, -layoutOpts.margin)
+    title:SetText(text)
+
+    return title
+end
+
+local function addTextDynamic(frame, position, getTextFunc)
+    local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    title:SetPoint("TOPLEFT", position, "BOTTOMLEFT", 0, -layoutOpts.margin)
+    title:SetText("")
+    title:SetScript("OnShow", function(self)
+        self:SetText(getTextFunc(self))
+    end)
+
+    return title
 end
 
 local function addCheckbox(frame, position, labelText, tooltipText, settingNamespace, settingName, defaultValue)
@@ -94,13 +120,20 @@ end
 
 local function addModuleSettings(frame, nextPosition, moduleName)
     AutoEmoteSettings[moduleName] = AutoEmoteSettings[moduleName] or {}
-    AutoEmoteDB[moduleName] = AutoEmoteDB[moduleName] or {}
     if AutoEmoteSettings[moduleName].enabled == nil then AutoEmoteSettings[moduleName].enabled = true end
-
+    AutoEmoteDB[moduleName] = AutoEmoteDB[moduleName] or {}
+    AutoEmoteDB[moduleName].cache = AutoEmoteDB[moduleName].cache or {}
+    AutoEmoteDB[moduleName].stats = AutoEmoteDB[moduleName].stats or {}
+    initializeStats(AutoEmoteDB[moduleName].stats)
     nextPosition = addTitle(frame, nextPosition, "Module '" .. moduleName .. "'")
+    nextPosition = addTextDynamic(frame, nextPosition, function(self)
+        return "Players: " .. AutoEmoteDB[moduleName].stats.player .. ", Pets: " .. AutoEmoteDB[moduleName].stats.pet .. ", Minions: " .. AutoEmoteDB[moduleName].stats.minion .. ", Other: " .. AutoEmoteDB[moduleName].stats.other
+    end)
     nextPosition = addCheckbox(frame, nextPosition, "Enable", "Enable/ Disable the '" .. moduleName .. "' module.", moduleName, "enabled", true)
     nextPosition = addButton(frame, nextPosition, "Reset Data", "Clear the history of targets this module emoted at.", function()
-        table.wipe(AutoEmoteDB[moduleName])
+        table.wipe(AutoEmoteDB[moduleName].cache)
+        table.wipe(AutoEmoteDB[moduleName].stats)
+        initializeStats(AutoEmoteDB[moduleName].stats)
         AutoEmote.Logging.debug("History for module '" .. moduleName .. "' has been cleared!")
     end)
 
