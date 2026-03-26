@@ -1,30 +1,51 @@
 local addonName, AutoEmote = ...
 
+local function getUnitKey(unit)
+    if AutoEmoteSettings._.uniqueTargets then
+        return UnitGUID(unit)
+    else
+        local unitName, unitServer = UnitFullName(unit)
+        if unitServer ~= nil then
+            return unitName .. "-" .. unitServer
+        else
+            return unitName
+        end
+    end
+end
+
+local function getUnitType(unit)
+    print(UnitPlayerControlled(unit))
+    print(UnitIsPlayer(unit))
+    print(UnitIsOtherPlayersPet(unit))
+    print(UnitIsMinion(unit))
+    if UnitIsPlayer(unit) then return "player" end
+    if UnitIsMinion(unit) then return "minion" end
+    return "other"
+end
+
+local function executeModule(moduleName, unitKey, unitType)
+    if issecretvalue(unitKey) then
+        if AutoEmoteSettings[moduleName].alwaysExecuteWhenRestricted then
+            DoEmote(AutoEmoteSettings[moduleName].emote)
+        end
+        return
+    end
+    if AutoEmoteSettings[moduleName].enabled and not AutoEmoteDB[moduleName].cache[unitKey] then
+        DoEmote(AutoEmoteSettings[moduleName].emote)
+        AutoEmoteDB[moduleName].cache[unitKey] = true
+        AutoEmoteDB[moduleName].stats[unitType] = AutoEmoteDB[moduleName].stats[unitType] + 1
+    end
+end
+
 AutoEmote.onEvent("THIS_ADDON_LOADED", function(frame)
     AutoEmote.Settings.initialize()
 end)
 
 AutoEmote.onEvent("PLAYER_TARGET_CHANGED", function(frame)
     if not AutoEmoteSettings._.enabled then return end
-    if UnitExists("target") and not UnitIsDead("target") and not InCombatLockdown() then
-        local unitName = nil
-        local unitServer = nil
-        unitName, unitServer = UnitFullName("target")
-        -- unitName = unitName .. ""
-        -- print(type(unitName))
-        -- if not unitName then return end
-        local key = nil
-        if unitServer ~= nil then key = unitName .. "-" .. unitServer else key = unitName end
-
-        local unitType = "other"
-        if UnitIsPlayer("target") then unitType = "player" end
-        if (UnitPlayerControlled("target") and not UnitIsPlayer("target")) or UnitIsOtherPlayersPet("target") then unitType = "pet" end
-        if UnitIsMinion("target") then unitType = "minion" end
-
-        if AutoEmoteSettings.lickAll.enabled and not AutoEmoteDB.lickAll.cache[key] then
-            DoEmote("LICK")
-            AutoEmoteDB.lickAll.cache[key] = true
-            AutoEmoteDB.lickAll.stats[unitType] = AutoEmoteDB.lickAll.stats[unitType] + 1
-        end
-    end
+    if not UnitExists("target") then return end
+    local unitKey = getUnitKey("target")
+    local unitType = getUnitType("target")
+    -- Execute modules
+    executeModule("lickAll", unitKey, unitType)
 end)

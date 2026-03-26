@@ -6,12 +6,41 @@ local layoutOpts = {
     margin = 8,
     scrollBarWidth = 18
 }
+local AutoEmoteSettingsVersion = 1
+local AutoEmoteDBVersion = 1
 
-local function initializeStats(statsTable)
-    if statsTable.other == nil then statsTable.other = 0 end
-    if statsTable.player == nil then statsTable.player = 0 end
-    if statsTable.pet == nil then statsTable.pet = 0 end
-    if statsTable.minion == nil then statsTable.minion = 0 end
+local function checkInitializeSettings(t, settingName, defaultValue)
+    AutoEmoteSettings._ = AutoEmoteSettings._ or {}
+    if AutoEmoteSettings._.version == nil or AutoEmoteSettings._.version ~= AutoEmoteSettingsVersion then
+        table.wipe(AutoEmoteSettings)
+        AutoEmoteSettings._ = {}
+    end
+    AutoEmoteSettings._.version = AutoEmoteSettingsVersion
+    if settingName == nil then return end
+    if t[settingName] == nil then
+        t[settingName] = defaultValue
+    end
+end
+
+local function checkInitializeDatabase(t, settingName, defaultValue)
+    AutoEmoteDB._ = AutoEmoteDB._ or {}
+    if AutoEmoteDB._.version == nil or AutoEmoteDB._.version ~= AutoEmoteDBVersion then
+        table.wipe(AutoEmoteDB)
+        AutoEmoteDB._ = {}
+    end
+    AutoEmoteDB._.version = AutoEmoteDBVersion
+    if settingName == nil then return end
+    if t[settingName] == nil then
+        t[settingName] = defaultValue
+    end
+end
+
+local function createEmptyStats()
+    return {
+        other = 0,
+        player = 0,
+        minion = 0
+    }
 end
 
 local function setTooltip(element, text)
@@ -66,7 +95,8 @@ local function addTextDynamic(frame, position, getTextFunc)
 end
 
 local function addCheckbox(frame, position, labelText, tooltipText, settingNamespace, settingName, defaultValue)
-    if AutoEmoteSettings[settingNamespace][settingName] == nil then AutoEmoteSettings[settingNamespace][settingName] = defaultValue end
+    checkInitializeSettings(AutoEmoteSettings[settingNamespace], settingName, defaultValue)
+
     local checkbox = CreateFrame("CheckButton", nil, frame, "InterfaceOptionsCheckButtonTemplate")
     checkbox:SetPoint("TOPLEFT", position, "BOTTOMLEFT", 0, -layoutOpts.margin)
     checkbox:SetChecked(AutoEmoteSettings[settingNamespace][settingName])
@@ -109,31 +139,33 @@ local function addHeader(frame, nextPosition)
 end
 
 local function addGeneralSettings(frame, nextPosition)
-    AutoEmoteSettings._ = AutoEmoteSettings._ or {}
-    if AutoEmoteSettings._.logLevel == nil then AutoEmoteSettings._.logLevel = 0 end
+    checkInitializeSettings(AutoEmoteSettings._, "logLevel", 0)
 
     nextPosition = addTitle(frame, nextPosition, "General")
     nextPosition = addCheckbox(frame, nextPosition, "Enable", "Enable/ Disable the add-on completely.", "_", "enabled", true)
+    nextPosition = addCheckbox(frame, nextPosition, "Unique Creatures", "Execute emote once for each unique target instead of once for each unique name of a target.", "_", "uniqueTargets", false)
 
     return nextPosition
 end
 
-local function addModuleSettings(frame, nextPosition, moduleName)
-    AutoEmoteSettings[moduleName] = AutoEmoteSettings[moduleName] or {}
-    if AutoEmoteSettings[moduleName].enabled == nil then AutoEmoteSettings[moduleName].enabled = true end
-    AutoEmoteDB[moduleName] = AutoEmoteDB[moduleName] or {}
-    AutoEmoteDB[moduleName].cache = AutoEmoteDB[moduleName].cache or {}
-    AutoEmoteDB[moduleName].stats = AutoEmoteDB[moduleName].stats or {}
-    initializeStats(AutoEmoteDB[moduleName].stats)
+local function addModuleSettings(frame, nextPosition, moduleName, emoteIdentifier)
+    checkInitializeSettings(AutoEmoteSettings, moduleName, {})
+    checkInitializeSettings(AutoEmoteSettings[moduleName], "enabled", true)
+    checkInitializeSettings(AutoEmoteSettings[moduleName], "emote", emoteIdentifier)
+
+    checkInitializeDatabase(AutoEmoteDB, moduleName, {})
+    checkInitializeDatabase(AutoEmoteDB[moduleName], "cache", {})
+    checkInitializeDatabase(AutoEmoteDB[moduleName], "stats", createEmptyStats())
+
     nextPosition = addTitle(frame, nextPosition, "Module '" .. moduleName .. "'")
     nextPosition = addTextDynamic(frame, nextPosition, function(self)
-        return "Players: " .. AutoEmoteDB[moduleName].stats.player .. ", Pets: " .. AutoEmoteDB[moduleName].stats.pet .. ", Minions: " .. AutoEmoteDB[moduleName].stats.minion .. ", Other: " .. AutoEmoteDB[moduleName].stats.other
+        return "Players: " .. AutoEmoteDB[moduleName].stats.player .. ", Pets & Minions: " .. AutoEmoteDB[moduleName].stats.minion .. ", Other: " .. AutoEmoteDB[moduleName].stats.other
     end)
     nextPosition = addCheckbox(frame, nextPosition, "Enable", "Enable/ Disable the '" .. moduleName .. "' module.", moduleName, "enabled", true)
+    nextPosition = addCheckbox(frame, nextPosition, "Always execute in restricted context", "Always execute the module when no statistics can be inferred about the target due to WoW API restrictions (e.g. on enemies in instances)", moduleName, "alwaysExecuteWhenRestricted", false)
     nextPosition = addButton(frame, nextPosition, "Reset Data", "Clear the history of targets this module emoted at.", function()
         table.wipe(AutoEmoteDB[moduleName].cache)
-        table.wipe(AutoEmoteDB[moduleName].stats)
-        initializeStats(AutoEmoteDB[moduleName].stats)
+        AutoEmoteDB[moduleName].stats = createEmptyStats()
         AutoEmote.Logging.debug("History for module '" .. moduleName .. "' has been cleared!")
     end)
 
@@ -141,6 +173,8 @@ local function addModuleSettings(frame, nextPosition, moduleName)
 end
 
 function AutoEmote.Settings.initialize()
+    checkInitializeSettings(AutoEmoteSettings)
+    checkInitializeDatabase(AutoEmoteDB)
     -- local mainFrame = CreateFrame("Frame")
     -- mainFrame:SetSize(SettingsPanel.Container:GetWidth() - layoutOpts.padding, SettingsPanel.Container:GetHeight() - layoutOpts.padding)
 
@@ -163,7 +197,7 @@ function AutoEmote.Settings.initialize()
 
     nextPosition = addHeader(scrollChild, nextPosition)
     nextPosition = addGeneralSettings(scrollChild, nextPosition)
-    nextPosition = addModuleSettings(scrollChild, nextPosition, "lickAll")
+    nextPosition = addModuleSettings(scrollChild, nextPosition, "lickAll", "LICK")
 
     Settings.RegisterAddOnCategory(Settings.RegisterCanvasLayoutCategory(mainFrame, addonName))
 end
