@@ -14,10 +14,6 @@ local function getUnitKey(unit)
 end
 
 local function getUnitType(unit)
-    print(UnitPlayerControlled(unit))
-    print(UnitIsPlayer(unit))
-    print(UnitIsOtherPlayersPet(unit))
-    print(UnitIsMinion(unit))
     if UnitIsPlayer(unit) then return "player" end
     if UnitIsMinion(unit) then return "minion" end
     return "other"
